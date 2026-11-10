@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -61,3 +62,23 @@ def test_tool_error_is_visible_in_chat(monkeypatch, tmp_path):
     app.chat_input[0].set_value("Try a missing tool")
     app.run()
     assert any("Lỗi tool `not_registered`" in element.value for element in app.error)
+
+
+def test_new_conversation_abandons_pending_send_and_saves_transcript(monkeypatch, tmp_path):
+    fake = FakeProvider([ModelResponse(tool_calls=[ToolCall("send", {"text": "Pending post", "confirmed": True})])])
+    monkeypatch.setattr(providers, "make_provider", lambda name: fake)
+    monkeypatch.setattr(env_loader, "load_lab_env", lambda root: None)
+    monkeypatch.setattr("ui_core.TRANSCRIPTS_DIR", tmp_path)
+    app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=10)
+    app.run()
+    app.chat_input[0].set_value("Please post this")
+    app.run()
+    new_conversation = next(button for button in app.button if button.label == "Cuộc hội thoại mới")
+    assert not new_conversation.disabled
+    new_conversation.click().run()
+    assert app.session_state["transcript"] is None
+    transcripts = list(tmp_path.glob("*.transcript.json"))
+    assert len(transcripts) == 1
+    saved = json.loads(transcripts[0].read_text(encoding="utf-8"))
+    assert saved["turns"][0]["status"] == "abandoned"
+    assert saved["turns"][0]["tool_events"][0]["result"]["status"] == "abandoned"

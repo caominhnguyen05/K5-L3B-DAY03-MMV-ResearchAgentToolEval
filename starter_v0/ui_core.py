@@ -162,8 +162,8 @@ def new_transcript(provider: str, model: str | None, artifact_info: dict[str, An
         "tools_hash": artifact_info["tools_hash"],
         "provider": provider,
         "model": model,
-        "system_prompt": str(ARTIFACTS_DIR / "system_prompt.md"),
-        "tools": str(ARTIFACTS_DIR / "tools.yaml"),
+        "system_prompt": "artifacts/system_prompt.md",
+        "tools": "artifacts/tools.yaml",
         "history_window": HISTORY_WINDOW,
         "max_tool_rounds": MAX_TOOL_ROUNDS,
         "created_at": timestamp,
@@ -359,3 +359,17 @@ def resolve_confirmation(
         round_record=round_record,
         carried_events=pending["carried_events"] + [event],
     )
+
+
+def abandon_turn(turn: dict[str, Any]) -> dict[str, Any]:
+    """Abandon a paused confirmation turn without executing its pending tool."""
+    turn.pop("_pending", None)
+    turn["status"] = "abandoned"
+    turn["ended_at"] = now_iso()
+    for event in reversed(turn.get("tool_events", [])):
+        gate = event.get("ui_gate")
+        if gate and gate.get("intercepted") and gate.get("user_decision") is None:
+            gate["user_decision"] = "abandoned"
+            event["result"] = {"status": "abandoned"}
+            break
+    return turn

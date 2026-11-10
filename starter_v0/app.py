@@ -15,6 +15,7 @@ import providers
 from env_loader import load_lab_env
 from ui_core import (
     ROOT as UI_ROOT,
+    abandon_turn,
     confirmation_tools,
     load_artifacts,
     new_transcript,
@@ -30,7 +31,7 @@ SAMPLE_QUESTIONS = {
     "Research thường": "Tìm tin AI hôm nay và tổng hợp thành một bản tin ngắn giúp mình.",
     "Thiếu thông tin": "Tóm tắt 5 tweet mới nhất giúp mình",
     "Yêu cầu Telegram": "Đăng bản tin AI ở lượt đầu lên Telegram giúp mình.",
-    "Đọc URL": "Đọc và tóm tắt trang này giúp mình: https://example.com",
+    "Đọc URL": "Đọc giúp mình bài này: https://arxiv.org/abs/1706.03762",
 }
 
 
@@ -232,13 +233,17 @@ def main() -> None:
             st.error(f"Không đọc được artifacts/system_prompt.md hoặc artifacts/tools.yaml: {type(exc).__name__}: {exc}")
             st.stop()
         st.caption(f"artifact_version: `{artifact_info['artifact_version']}`")
-        if st.button("Cuộc hội thoại mới", disabled=bool(st.session_state.pending_turn)):
+        if st.button("Cuộc hội thoại mới"):
+            if st.session_state.pending_turn:
+                abandon_turn(st.session_state.pending_turn)
+                st.session_state.pending_turn = None
+            _persist()
             st.session_state.history = []
             st.session_state.transcript = None
-            st.session_state.pending_turn = None
             st.session_state.provider = None
             st.session_state.requested_model = None
             st.session_state.last_error = None
+            st.session_state.transcript_path = None
             st.rerun()
         declared_names = {str(item.get("name", "unknown")) for item in artifact_info["tool_declarations"]}
         gates = confirmation_tools(declared_tools=declared_names)

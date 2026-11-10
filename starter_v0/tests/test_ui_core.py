@@ -10,6 +10,7 @@ sys.path.insert(0, str(ROOT))
 
 from providers.base import ModelResponse, ToolCall
 from ui_core import (
+    abandon_turn,
     confirmation_tools,
     load_artifacts,
     new_transcript,
@@ -202,3 +203,31 @@ def test_transcript_matches_chat_schema_and_adds_ui_source(monkeypatch, tmp_path
     path = write_transcript(transcript)
     assert path.parent == tmp_path
     assert '"source": "streamlit_ui"' in path.read_text(encoding="utf-8")
+
+
+def test_transcript_paths_are_relative():
+    transcript = new_transcript("openrouter", "model-x", artifact_info())
+    assert transcript["system_prompt"] == "artifacts/system_prompt.md"
+    assert transcript["tools"] == "artifacts/tools.yaml"
+    assert not Path(transcript["system_prompt"]).is_absolute()
+    assert not Path(transcript["tools"]).is_absolute()
+
+
+def test_abandon_turn_marks_status_without_running_tool():
+    called = []
+    provider = FakeProvider(ModelResponse(tool_calls=[ToolCall("send", {"text": "pending", "confirmed": True})]))
+    turn = run_turn(
+        provider=provider,
+        model=None,
+        artifact_info=artifact_info(),
+        history=[],
+        user_text="Send this",
+        confirmation_names={"send"},
+        tool_functions={"send": lambda **kwargs: called.append(kwargs) or {"status": "sent"}},
+    )
+    abandoned = abandon_turn(turn)
+    assert abandoned["status"] == "abandoned"
+    assert "_pending" not in abandoned
+    assert abandoned["tool_events"][0]["result"]["status"] == "abandoned"
+    assert abandoned["tool_events"][0]["ui_gate"]["user_decision"] == "abandoned"
+    assert called == []
