@@ -34,7 +34,7 @@ URL đã được người dùng xác nhận mở được từ thiết bị kh�
 
 ### A2. Tool agent có
 
-Danh sách dưới đây lấy từ `starter_v0/artifacts/tools.yaml` hiện tại; đối chiếu registry trong `starter_v0/tools/__init__.py` và lịch sử Git không thấy tool mới ngoài 10 tool gốc.
+Danh sách dưới đây lấy từ `starter_v0/artifacts/tools.yaml` trên nhánh `feat/ui-report` (10 tool gốc). Thay đổi tool trên `origin/optimize` chưa được tích hợp vào nhánh báo cáo; chờ A/B xác nhận trước khi đồng bộ A2.
 
 | Tên tool | Làm được gì | Tool mới nhóm thêm? |
 |---|---|---|
@@ -55,7 +55,7 @@ Danh sách dưới đây lấy từ `starter_v0/artifacts/tools.yaml` hiện t�
 1. Tìm tin AI hôm nay và tổng hợp thành một bản tin ngắn giúp mình.
 2. Tóm tắt 5 tweet mới nhất giúp mình.
 3. Đăng bản tin AI ở lượt đầu lên Telegram giúp mình.
-4. Đọc và tóm tắt trang này giúp mình: https://example.com
+4. Đọc giúp mình bài này: https://arxiv.org/abs/1706.03762
 
 ## 3. Giải pháp
 
